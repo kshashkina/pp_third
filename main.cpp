@@ -1,38 +1,28 @@
 #include <iostream>
 #include <string>
+#include <Windows.h>
+
 using namespace std;
 
-string encrypt(string rawText, int key) {
-    string encryptedText;
-
-    for (char ch : rawText) {
-        if (isalpha(ch)) {
-            char base = islower(ch) ? 'a' : 'A';
-            encryptedText += char(((ch - base + key) % 26) + base);
-        } else {
-            encryptedText += ch;  // Keep non-alphabetic characters unchanged
-        }
-    }
-
-    return encryptedText;
-}
-
-string decrypt(string encryptedText, int key) {
-    string decryptedText;
-
-    for (char ch : encryptedText) {
-        if (isalpha(ch)) {
-            char base = islower(ch) ? 'a' : 'A';
-            decryptedText += char(((ch - base - key + 26) % 26) + base);
-        } else {
-            decryptedText += ch;  // Keep non-alphabetic characters unchanged
-        }
-    }
-
-    return decryptedText;
-}
+typedef string (*encrypt_ptr_t)(string, int);
+typedef string (*decrypt_ptr_t)(string, int);
 
 int main() {
+    HMODULE handle = LoadLibrary(TEXT("libCaesar.dll"));
+
+    if (handle == nullptr) {
+        cout << "DLL not found" << endl;
+        return 1;
+    }
+
+    encrypt_ptr_t encrypt_ptr = (encrypt_ptr_t)GetProcAddress(handle, "encrypt");
+    decrypt_ptr_t decrypt_ptr = (decrypt_ptr_t)GetProcAddress(handle, "decrypt");
+
+    if (encrypt_ptr == nullptr || decrypt_ptr == nullptr) {
+        cout << "Functions not found in DLL" << endl;
+        return 1;
+    }
+
     string rawText;
     int key;
     cout<< "Write your text"<< endl;
@@ -40,12 +30,14 @@ int main() {
     cout << "Write your key"<<endl;
     cin>>key;
 
-    string encryptedText = encrypt(rawText, key);
-    string decryptedText = decrypt(encryptedText, key);
+    string encryptedText = encrypt_ptr(rawText, key);
+    string decryptedText = decrypt_ptr(encryptedText, key);
 
     cout << "Original Text: " << rawText << endl;
     cout << "Encrypted Text: " << encryptedText << endl;
     cout << "Decrypted Text: " << decryptedText << endl;
+
+    FreeLibrary(handle);
 
     return 0;
 }
