@@ -26,7 +26,7 @@ int main() {
     string rawText;
     int key;
     cout<< "Write your text"<< endl;
-    cin >> rawText;
+    getline(cin, rawText);
     cout << "Write your key"<<endl;
     cin>>key;
 
